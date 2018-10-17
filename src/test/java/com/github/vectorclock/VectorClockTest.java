@@ -21,9 +21,9 @@ public class VectorClockTest {
   @Test
   public void testVectorClocks() {
     // Let's model a system of 3 inter-communicating nodes
-    final Node nodeOne = new Node();
-    final Node nodeTwo = new Node();
-    final Node nodeThree = new Node();
+    final Node nodeOne = new Node("a");
+    final Node nodeTwo = new Node("b");
+    final Node nodeThree = new Node("c");
 
     // Setup vector clocks for every node
     final VectorClock nodeOneClock = new VectorClock();
@@ -123,52 +123,51 @@ public class VectorClockTest {
 
     // TODO: Due to #6 and #7 being CONCURRENT events, expect future events to be first resolved
     /*
-    // 10. 3,0,0 -> 4,0,2 :: nodeOne<-nodeThree receive event
-    senderClock = nodeThreeClock.clone();
-    nodeOneClock.recordEvent(new Event(EventType.RECEIVE, nodeOne, Optional.of(senderClock)));
-    assertEquals(4L, nodeOneClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(0L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(2L, nodeOneClock.snapshot().get(nodeThree).currentValue());
-
-    // 11. 3,3,1 -> 3,4,1 :: nodeTwo->nodeOne send event
-    nodeTwoClock.recordEvent(new Event(EventType.SEND, nodeTwo, Optional.empty()));
-    assertEquals(3L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(4L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(1L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
-
-    // 12. 4,0,2 -> 5,4,2 :: nodeOne<-nodeTwo receive event
-    senderClock = nodeTwoClock.clone();
-    nodeOneClock.recordEvent(new Event(EventType.RECEIVE, nodeOne, Optional.of(senderClock)));
-    assertEquals(5L, nodeOneClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(4L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(2L, nodeOneClock.snapshot().get(nodeThree).currentValue());
-
-    // 13. 5,4,2 -> 6,4,2 :: nodeOne->nodeThree send event
-    nodeOneClock.recordEvent(new Event(EventType.SEND, nodeOne, Optional.empty()));
-    assertEquals(6L, nodeOneClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(4L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(2L, nodeOneClock.snapshot().get(nodeThree).currentValue());
-
-    // 14. 2,0,3 -> 6,4,4 :: nodeThree<-nodeOne receive event
-    senderClock = nodeOneClock.clone();
-    nodeThreeClock.recordEvent(new Event(EventType.RECEIVE, nodeThree, Optional.of(senderClock)));
-    assertEquals(6L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(4L, nodeThreeClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(4L, nodeThreeClock.snapshot().get(nodeThree).currentValue());
-
-    // 15. 6,4,4 -> 6,4,5 :: nodeThree->nodeTwo send event
-    nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
-    assertEquals(6L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(4L, nodeThreeClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(5L, nodeThreeClock.snapshot().get(nodeThree).currentValue());
-
-    // 16. 3,4,1 -> 6,5,5 :: nodeTwo<-nodeThree receive event
-    senderClock = nodeThreeClock.clone();
-    nodeTwoClock.recordEvent(new Event(EventType.RECEIVE, nodeTwo, Optional.of(senderClock)));
-    assertEquals(6L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(5L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(5L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
-    */
+     * // 10. 3,0,0 -> 4,0,2 :: nodeOne<-nodeThree receive event senderClock =
+     * nodeThreeClock.clone(); nodeOneClock.recordEvent(new Event(EventType.RECEIVE, nodeOne,
+     * Optional.of(senderClock))); assertEquals(4L,
+     * nodeOneClock.snapshot().get(nodeOne).currentValue()); assertEquals(0L,
+     * nodeOneClock.snapshot().get(nodeTwo).currentValue()); assertEquals(2L,
+     * nodeOneClock.snapshot().get(nodeThree).currentValue());
+     * 
+     * // 11. 3,3,1 -> 3,4,1 :: nodeTwo->nodeOne send event nodeTwoClock.recordEvent(new
+     * Event(EventType.SEND, nodeTwo, Optional.empty())); assertEquals(3L,
+     * nodeTwoClock.snapshot().get(nodeOne).currentValue()); assertEquals(4L,
+     * nodeTwoClock.snapshot().get(nodeTwo).currentValue()); assertEquals(1L,
+     * nodeTwoClock.snapshot().get(nodeThree).currentValue());
+     * 
+     * // 12. 4,0,2 -> 5,4,2 :: nodeOne<-nodeTwo receive event senderClock = nodeTwoClock.clone();
+     * nodeOneClock.recordEvent(new Event(EventType.RECEIVE, nodeOne, Optional.of(senderClock)));
+     * assertEquals(5L, nodeOneClock.snapshot().get(nodeOne).currentValue()); assertEquals(4L,
+     * nodeOneClock.snapshot().get(nodeTwo).currentValue()); assertEquals(2L,
+     * nodeOneClock.snapshot().get(nodeThree).currentValue());
+     * 
+     * // 13. 5,4,2 -> 6,4,2 :: nodeOne->nodeThree send event nodeOneClock.recordEvent(new
+     * Event(EventType.SEND, nodeOne, Optional.empty())); assertEquals(6L,
+     * nodeOneClock.snapshot().get(nodeOne).currentValue()); assertEquals(4L,
+     * nodeOneClock.snapshot().get(nodeTwo).currentValue()); assertEquals(2L,
+     * nodeOneClock.snapshot().get(nodeThree).currentValue());
+     * 
+     * // 14. 2,0,3 -> 6,4,4 :: nodeThree<-nodeOne receive event senderClock = nodeOneClock.clone();
+     * nodeThreeClock.recordEvent(new Event(EventType.RECEIVE, nodeThree,
+     * Optional.of(senderClock))); assertEquals(6L,
+     * nodeThreeClock.snapshot().get(nodeOne).currentValue()); assertEquals(4L,
+     * nodeThreeClock.snapshot().get(nodeTwo).currentValue()); assertEquals(4L,
+     * nodeThreeClock.snapshot().get(nodeThree).currentValue());
+     * 
+     * // 15. 6,4,4 -> 6,4,5 :: nodeThree->nodeTwo send event nodeThreeClock.recordEvent(new
+     * Event(EventType.SEND, nodeThree, Optional.empty())); assertEquals(6L,
+     * nodeThreeClock.snapshot().get(nodeOne).currentValue()); assertEquals(4L,
+     * nodeThreeClock.snapshot().get(nodeTwo).currentValue()); assertEquals(5L,
+     * nodeThreeClock.snapshot().get(nodeThree).currentValue());
+     * 
+     * // 16. 3,4,1 -> 6,5,5 :: nodeTwo<-nodeThree receive event senderClock =
+     * nodeThreeClock.clone(); nodeTwoClock.recordEvent(new Event(EventType.RECEIVE, nodeTwo,
+     * Optional.of(senderClock))); assertEquals(6L,
+     * nodeTwoClock.snapshot().get(nodeOne).currentValue()); assertEquals(5L,
+     * nodeTwoClock.snapshot().get(nodeTwo).currentValue()); assertEquals(5L,
+     * nodeTwoClock.snapshot().get(nodeThree).currentValue());
+     */
 
     // TODO: validate EventOrderResolution
 

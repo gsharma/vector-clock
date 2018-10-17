@@ -94,7 +94,7 @@ public final class LogicalTstamp implements Comparable<LogicalTstamp> {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("LogicalTstamp[value:").append(timestamp).append("]");
+    builder.append("Tstamp[val:").append(timestamp).append("]");
     return builder.toString();
   }
 

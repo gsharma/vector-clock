@@ -6,22 +6,26 @@ package com.github.vectorclock;
  * @author gaurav
  */
 public class Node {
-  private final String key = keyProvider().key();
+  private final String id;
 
-  // return the unique node id
-  public String getKey() {
-    return key;
+  public Node(final String id) {
+    this.id = id;
   }
 
-  public KeyProvider keyProvider() {
-    return new RandomKeyProvider();
+  public Node(final IdProvider idProvider) {
+    id = idProvider.id();
+  }
+
+  // return the unique node id
+  public String getId() {
+    return id;
   }
 
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((key == null) ? 0 : key.hashCode());
+    result = prime * result + ((id == null) ? 0 : id.hashCode());
     return result;
   }
 
@@ -37,11 +41,11 @@ public class Node {
       return false;
     }
     Node other = (Node) obj;
-    if (key == null) {
-      if (other.key != null) {
+    if (id == null) {
+      if (other.id != null) {
         return false;
       }
-    } else if (!key.equals(other.key)) {
+    } else if (!id.equals(other.id)) {
       return false;
     }
     return true;
@@ -50,7 +54,7 @@ public class Node {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("Node[key:").append(key).append("]");
+    builder.append("Node[id:").append(id).append("]");
     return builder.toString();
   }
 

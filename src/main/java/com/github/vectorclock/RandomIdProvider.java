@@ -3,14 +3,14 @@ package com.github.vectorclock;
 import java.util.UUID;
 
 /**
- * A random key provider relying on random Type 4 UUIDs.
+ * A random id provider relying on random Type 4 UUIDs.
  * 
  * @author gaurav
  */
-public class RandomKeyProvider implements KeyProvider {
+public class RandomIdProvider implements IdProvider {
 
   @Override
-  public String key() {
+  public String id() {
     return UUID.randomUUID().toString();
   }
 
