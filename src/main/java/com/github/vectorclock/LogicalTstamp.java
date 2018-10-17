@@ -27,6 +27,8 @@ public final class LogicalTstamp implements Comparable<LogicalTstamp> {
     this.timestamp = timestamp;
   }
 
+  // due to the fact that ticking generates another immutable tstamp by simply reading the
+  // timestamp, there's no need to lock here
   LogicalTstamp tick() {
     long nextTstamp = timestamp;
     if (nextTstamp == Long.MAX_VALUE) {

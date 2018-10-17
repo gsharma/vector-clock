@@ -1,6 +1,7 @@
 package com.github.vectorclock;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Optional;
@@ -195,6 +196,33 @@ public class VectorClockTest {
 
     // TODO: validate EventOrderResolution
 
+  }
+
+  @Test
+  public void testTstampTickSafety() throws Exception {
+    LogicalTstamp init = new LogicalTstamp();
+    assertEquals(0L, init.currentValue());
+
+    // test that concurrent tstamp ticking doesn't ever screw with correctness - every thread should
+    // simply gets its local copy of tstamp to muck with and should never trample on anyone else's
+    // tstamp
+    int workerCount = 100;
+    Thread[] workers = new Thread[workerCount];
+    for (int iter = 0; iter < workerCount; iter++) {
+      workers[iter] = new Thread() {
+        public void run() {
+          final LogicalTstamp next = init.tick();
+          assertNotNull(next);
+          assertEquals(1L, next.currentValue());
+        }
+      };
+    }
+    for (Thread worker : workers) {
+      worker.start();
+    }
+    for (Thread worker : workers) {
+      worker.join();
+    }
   }
 
 }
