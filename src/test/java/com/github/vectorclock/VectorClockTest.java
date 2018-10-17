@@ -1,6 +1,7 @@
 package com.github.vectorclock;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Optional;
 
@@ -17,6 +18,29 @@ import com.github.vectorclock.Event.EventType;
  */
 public class VectorClockTest {
   private static final Logger logger = LogManager.getLogger(VectorClockTest.class.getSimpleName());
+
+  @Test
+  public void testTstampCausality() {
+    LogicalTstamp tstampInit = new LogicalTstamp();
+    LogicalTstamp tstampNext = tstampInit.tick();
+    LogicalTstamp tstampNextNext = tstampNext.tick();
+    logger.info(String.format("tstampInit:%s, tstampNext:%s, tstampNextNext:%s", tstampInit,
+        tstampNext, tstampNextNext));
+
+    assertTrue(tstampInit.before(tstampNext));
+    assertTrue(tstampNext.before(tstampNextNext));
+    assertTrue(tstampInit.before(tstampNextNext));
+
+    assertTrue(tstampNext.after(tstampInit));
+    assertTrue(tstampNextNext.after(tstampNext));
+    assertTrue(tstampNextNext.after(tstampInit));
+
+    LogicalTstamp tstampInitClone = tstampInit.clone();
+    assertEquals(tstampInit, tstampInitClone);
+
+    LogicalTstamp curatedFromTstampInit = LogicalTstamp.curate(tstampInit.currentValue());
+    assertEquals(tstampInit, curatedFromTstampInit);
+  }
 
   @Test
   public void testVectorClocks() {

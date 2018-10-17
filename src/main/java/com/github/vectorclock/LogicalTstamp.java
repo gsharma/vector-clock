@@ -1,14 +1,12 @@
 package com.github.vectorclock;
 
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Logical timestamp representation.
  * 
  * @author gaurav
  */
 public final class LogicalTstamp implements Comparable<LogicalTstamp> {
-  private final AtomicLong timestamp = new AtomicLong();
+  private final long timestamp;
 
   public LogicalTstamp() {
     this(0L);
@@ -26,16 +24,17 @@ public final class LogicalTstamp implements Comparable<LogicalTstamp> {
     if (timestamp < 0) {
       throw new IllegalArgumentException("Only positive timestamp values are allowed");
     }
-    this.timestamp.set(timestamp);
+    this.timestamp = timestamp;
   }
 
   LogicalTstamp tick() {
-    if (timestamp.get() == Long.MAX_VALUE) {
-      timestamp.set(0L);
+    long nextTstamp = timestamp;
+    if (nextTstamp == Long.MAX_VALUE) {
+      nextTstamp = 0L;
     } else {
-      timestamp.incrementAndGet();
+      ++nextTstamp;
     }
-    return new LogicalTstamp(timestamp.get());
+    return new LogicalTstamp(nextTstamp);
   }
 
   boolean before(final LogicalTstamp other) {
@@ -47,20 +46,31 @@ public final class LogicalTstamp implements Comparable<LogicalTstamp> {
   }
 
   long currentValue() {
-    return timestamp.get();
+    return timestamp;
   }
 
   @Override
   public LogicalTstamp clone() {
-    return new LogicalTstamp(timestamp.get());
+    return new LogicalTstamp(timestamp);
+  }
+
+  @Override
+  public int compareTo(final LogicalTstamp other) {
+    return Long.compare(this.timestamp, other.timestamp);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("Tstamp[val:").append(timestamp).append("]");
+    return builder.toString();
   }
 
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    long longTstamp = timestamp.get();
-    result = prime * result + (int) (longTstamp ^ (longTstamp >>> 32));
+    result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
     return result;
   }
 
@@ -76,26 +86,10 @@ public final class LogicalTstamp implements Comparable<LogicalTstamp> {
       return false;
     }
     LogicalTstamp other = (LogicalTstamp) obj;
-    if (timestamp == null) {
-      if (other.timestamp != null) {
-        return false;
-      }
-    } else if (timestamp.get() != other.timestamp.get()) {
+    if (timestamp != other.timestamp) {
       return false;
     }
     return true;
-  }
-
-  @Override
-  public int compareTo(final LogicalTstamp other) {
-    return Long.compare(this.timestamp.get(), other.timestamp.get());
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("Tstamp[val:").append(timestamp).append("]");
-    return builder.toString();
   }
 
 }
