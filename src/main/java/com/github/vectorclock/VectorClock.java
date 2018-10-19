@@ -152,10 +152,11 @@ public final class VectorClock {
         final VectorClock receivedClock = event.getSenderClock();
 
         // clone the current clock
-        VectorClock currentClock = clone();
+        // VectorClock currentClock = clone();
 
         // now check if the event ordering indicates concurrent events
-        final EventOrdering eventOrdering = VectorClock.compareClocks(currentClock, receivedClock);
+        final EventOrdering eventOrdering = VectorClock.compareClocks(this, receivedClock);
+
         if (eventOrdering == EventOrdering.CONCURRENT) {
           // do not accept events that result in conflicting version updates
           transition = new VectorClockTransition(event, this, true);
