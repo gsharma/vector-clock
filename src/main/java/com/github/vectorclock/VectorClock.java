@@ -1,8 +1,11 @@
 package com.github.vectorclock;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -40,14 +43,17 @@ public final class VectorClock {
     return tstampVector.remove(node) != null ? true : false;
   }
 
-  public Map<Node, LogicalTstamp> snapshot() {
-    final Map<Node, LogicalTstamp> snapshot = new HashMap<>();
+  public SortedMap<Node, LogicalTstamp> snapshot() {
+    final SortedMap<Node, LogicalTstamp> snapshot = new TreeMap<>(new Comparator<Node>() {
+      public int compare(Node nodeOne, Node nodeTwo) {
+        return nodeOne.getId().compareTo(nodeTwo.getId());
+      }
+    });
     for (final Node node : tstampVector.keySet()) {
       snapshot.put(node, tstampVector.get(node).clone());
     }
-    final Map<Node, LogicalTstamp> immutableSnapshot = Collections.unmodifiableMap(snapshot);
-    logger.info(immutableSnapshot);
-    return immutableSnapshot;
+    logger.info(snapshot);
+    return snapshot;
   }
 
   @Override
@@ -58,6 +64,73 @@ public final class VectorClock {
       cloned.initNodeTstampTuple(entry.getKey(), entry.getValue());
     }
     return cloned;
+  }
+
+  /**
+   * Compare two vector clocks and return:<br/>
+   * 
+   * 1. IDENTICAL if the count and values all match<br/>
+   * 2. HAPPENS_BEFORE if all tstamps of clockOne happen before those of clockTwo<br/>
+   * 3. HAPPENS_AFTER if all tstamps of clockOne happen after those of clockTwo<br/>
+   * 4. CONCURRENT if some tstamps of clockOne and clockTwo are reverse ordered<br/>
+   * 5. NOT_COMPARABLE otherwise
+   */
+  public static EventOrdering compareClocks(final VectorClock clockOne,
+      final VectorClock clockTwo) {
+    EventOrdering ordering = null;
+    if (clockOne == null || clockTwo == null) {
+      throw new IllegalArgumentException("Cannot compare null vector clocks");
+    }
+
+    final Map<Node, LogicalTstamp> clockOneSnapshot = clockOne.snapshot();
+    final Map<Node, LogicalTstamp> clockTwoSnapshot = clockTwo.snapshot();
+
+    Set<Node> clockOneNodes = clockOneSnapshot.keySet();
+    Set<Node> clockTwoNodes = clockTwoSnapshot.keySet();
+
+    // sizes differ, not comparable
+    if (clockOneNodes.size() != clockTwoNodes.size()) {
+      return EventOrdering.NOT_COMPARABLE;
+    }
+
+    // sizes are same but some nodes differ
+    clockOneNodes.retainAll(clockTwoNodes);
+    if (clockOneNodes.size() != clockTwoNodes.size()) {
+      return EventOrdering.NOT_COMPARABLE;
+    }
+
+    // got here, so nodes and sizes are identical - let's iterate and compare each tstamp
+    boolean oneAfterTwo = false;
+    boolean twoAfterOne = false;
+    boolean concurrent = false;
+    for (Iterator<LogicalTstamp> iterOne = clockOneSnapshot.values().iterator(), iterTwo =
+        clockTwoSnapshot.values().iterator(); iterOne.hasNext() && iterTwo.hasNext();) {
+      final LogicalTstamp tstampOne = iterOne.next();
+      final LogicalTstamp tstampTwo = iterTwo.next();
+      if (tstampOne.after(tstampTwo)) {
+        oneAfterTwo = true;
+      }
+      if (tstampTwo.after(tstampOne)) {
+        twoAfterOne = true;
+      }
+      if (oneAfterTwo && twoAfterOne) {
+        ordering = EventOrdering.CONCURRENT;
+        concurrent = true;
+        break;
+      }
+    }
+
+    if (oneAfterTwo && !twoAfterOne) {
+      ordering = EventOrdering.HAPPENS_AFTER;
+    } else if (!oneAfterTwo && twoAfterOne) {
+      ordering = EventOrdering.HAPPENS_BEFORE;
+    } else if (!oneAfterTwo && !twoAfterOne && !concurrent) {
+      ordering = EventOrdering.IDENTICAL;
+    } // else ordering is CONCURRENT
+
+    logger.info(
+        String.format("VectorClock %s and VectorClock %s are %s", clockOne, clockTwo, ordering));
+    return ordering;
   }
 
   /**
@@ -94,11 +167,6 @@ public final class VectorClock {
         }
       }
     }
-  }
-
-  public static EventOrderResolution determineOrdering(final VectorClock clockOne,
-      final VectorClock clockTwo) {
-    return null;
   }
 
 }
