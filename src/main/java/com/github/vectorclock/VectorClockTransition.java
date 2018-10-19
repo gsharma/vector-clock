@@ -8,33 +8,34 @@ package com.github.vectorclock;
  */
 public final class VectorClockTransition {
   private final Event nodeEvent;
-  private final LogicalTstamp previousTstamp;
-  private final LogicalTstamp currentTstamp;
+  private final VectorClock receiverVectorClock;
+  private final boolean concurrentEventConflictDetected;
 
-  public VectorClockTransition(final Event nodeEvent, final LogicalTstamp previousTstamp,
-      final LogicalTstamp currentTstamp) {
+  public VectorClockTransition(final Event nodeEvent, final VectorClock receiverVectorClock,
+      final boolean concurrentEventConflictDetected) {
     this.nodeEvent = nodeEvent;
-    this.previousTstamp = previousTstamp;
-    this.currentTstamp = currentTstamp;
+    this.receiverVectorClock = receiverVectorClock;
+    this.concurrentEventConflictDetected = concurrentEventConflictDetected;
   }
 
   public Event getNodeEvent() {
     return nodeEvent;
   }
 
-  public LogicalTstamp getPreviousTstamp() {
-    return previousTstamp;
+  public VectorClock getReceiverVectorClock() {
+    return receiverVectorClock;
   }
 
-  public LogicalTstamp getCurrentTstamp() {
-    return currentTstamp;
+  public boolean isConcurrentEventConflictDetected() {
+    return concurrentEventConflictDetected;
   }
 
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("VectorClockTransition[").append(nodeEvent).append(", previous ")
-        .append(previousTstamp).append(", current").append(currentTstamp).append("]");
+    builder.append("VectorClockTransition [").append(nodeEvent).append(", receiver")
+        .append(receiverVectorClock).append(", concurrentEventConflictDetected:")
+        .append(concurrentEventConflictDetected).append("]");
     return builder.toString();
   }
 

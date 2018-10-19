@@ -128,8 +128,7 @@ public final class VectorClock {
       ordering = EventOrdering.IDENTICAL;
     } // else ordering is CONCURRENT
 
-    logger.info(
-        String.format("VectorClock %s and VectorClock %s are %s", clockOne, clockTwo, ordering));
+    logger.info(String.format("%s and %s are %s", clockOne, clockTwo, ordering));
     return ordering;
   }
 
@@ -137,7 +136,8 @@ public final class VectorClock {
    * Record a significant event that materially changes the state and/or data of a Node. This
    * results in a change to the VectorClock.
    */
-  public void recordEvent(final Event event) {
+  public VectorClockTransition recordEvent(final Event event) {
+    VectorClockTransition transition = null;
     final Node node = event.getImpactedNode();
     final LogicalTstamp current = tstampVector.get(node);
     switch (event.getEventType()) {
@@ -145,16 +145,33 @@ public final class VectorClock {
       case SEND:
         final LogicalTstamp next = current.tick();
         tstampVector.put(node, next);
+        transition = new VectorClockTransition(event, null, false);
         break;
       case RECEIVE:
-        // first tick current tstamp
-        tstampVector.put(node, current.tick());
         // this is expected to be typically a clone of the original clock
         final VectorClock receivedClock = event.getSenderClock();
-        // now merge in received vector clock
-        mergeClock(receivedClock);
+
+        // clone the current clock
+        VectorClock currentClock = clone();
+
+        // now check if the event ordering indicates concurrent events
+        final EventOrdering eventOrdering = VectorClock.compareClocks(currentClock, receivedClock);
+        if (eventOrdering == EventOrdering.CONCURRENT) {
+          // do not accept events that result in conflicting version updates
+          transition = new VectorClockTransition(event, this, true);
+        } else {
+          // first tick current tstamp
+          final LogicalTstamp nextTstamp = current.tick();
+          tstampVector.put(node, nextTstamp);
+
+          // now merge in received vector clock
+          mergeClock(receivedClock);
+
+          transition = new VectorClockTransition(event, this, false);
+        }
         break;
     }
+    return transition;
   }
 
   private void mergeClock(final VectorClock clock) {
@@ -167,6 +184,11 @@ public final class VectorClock {
         }
       }
     }
+  }
+
+  @Override
+  public String toString() {
+    return "VectorClock:[" + snapshot().toString() + "]";
   }
 
 }
