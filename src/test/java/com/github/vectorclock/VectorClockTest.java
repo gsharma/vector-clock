@@ -44,6 +44,72 @@ public class VectorClockTest {
   }
 
   @Test
+  public void testVectorClockOrdering() {
+    // Let's model a system of 3 inter-communicating nodes
+    final Node nodeOne = new Node("1");
+    final Node nodeTwo = new Node("2");
+    final Node nodeThree = new Node("3");
+
+    // Setup vector clocks for every node
+    final VectorClock nodeOneClock = new VectorClock();
+    nodeOneClock.initNode(nodeOne);
+    nodeOneClock.initNode(nodeTwo);
+    nodeOneClock.initNode(nodeThree);
+
+    // check that every tstamp in this clock initialized to zero
+    for (final LogicalTstamp logicalTstamp : nodeOneClock.snapshot().values()) {
+      assertEquals(0L, logicalTstamp.currentValue());
+    }
+
+    final VectorClock nodeTwoClock = new VectorClock();
+    nodeTwoClock.initNode(nodeOne);
+    nodeTwoClock.initNode(nodeTwo);
+    nodeTwoClock.initNode(nodeThree);
+
+    // check that every tstamp in this clock initialized to zero
+    for (final LogicalTstamp logicalTstamp : nodeTwoClock.snapshot().values()) {
+      assertEquals(0L, logicalTstamp.currentValue());
+    }
+
+    final VectorClock nodeThreeClock = new VectorClock();
+    nodeThreeClock.initNode(nodeOne);
+    nodeThreeClock.initNode(nodeTwo);
+    nodeThreeClock.initNode(nodeThree);
+
+    // check that every tstamp in this clock initialized to zero
+    for (final LogicalTstamp logicalTstamp : nodeThreeClock.snapshot().values()) {
+      assertEquals(0L, logicalTstamp.currentValue());
+    }
+
+    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
+    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeOneClock, nodeThreeClock));
+    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeTwoClock, nodeThreeClock));
+
+    // 1a. local event on nodeOne: 0,0,0 -> 1,0,0
+    nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
+
+    // 1b. validate ordering
+    assertEquals(EventOrdering.HAPPENS_AFTER,
+        VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
+    assertEquals(EventOrdering.HAPPENS_AFTER,
+        VectorClock.compareClocks(nodeOneClock, nodeThreeClock));
+    assertEquals(EventOrdering.HAPPENS_BEFORE,
+        VectorClock.compareClocks(nodeTwoClock, nodeOneClock));
+    assertEquals(EventOrdering.HAPPENS_BEFORE,
+        VectorClock.compareClocks(nodeThreeClock, nodeOneClock));
+    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeTwoClock, nodeThreeClock));
+
+    // 2a. concurrent events:: nodeTwo: 0,0,0->0,1,0, nodeThree: 0,0,0->0,0,1
+    nodeTwoClock.recordEvent(new Event(EventType.SEND, nodeTwo, Optional.empty()));
+    nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
+
+    // 2b. validate ordering - at this stage, all clocks show concurrent events
+    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
+    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeOneClock, nodeThreeClock));
+    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeTwoClock, nodeThreeClock));
+  }
+
+  @Test
   public void testVectorClocks() {
     // Let's model a system of 3 inter-communicating nodes
     final Node nodeOne = new Node("a");
@@ -118,7 +184,6 @@ public class VectorClockTest {
     assertEquals(0L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
     assertEquals(0L, nodeOneClock.snapshot().get(nodeThree).currentValue());
 
-    // #6 and #7 are CONCURRENT events
     // 6. 0,0,1 -> 0,0,2 :: nodeThree->nodeOne send event
     nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
     assertEquals(0L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
@@ -146,7 +211,20 @@ public class VectorClockTest {
     assertEquals(3L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
     assertEquals(1L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
 
-    // TODO: Due to #6 and #7 being CONCURRENT events, expect future events to be first resolved
+    // Observed Concurrent events will stall further processing until conflicts are resolved
+
+    // 2,0,3 (nodeThree) vs 3,0,0 (nodeOne)
+    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeThreeClock, nodeOneClock));
+
+    // 2,0,3 (nodeThree) vs 3,3,1 (nodeTwo)
+    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeThreeClock, nodeTwoClock));
+
+    // 3,0,0 (nodeOne) vs 3,3,1 (nodeTwo)
+    assertEquals(EventOrdering.HAPPENS_BEFORE,
+        VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
+
+
+    // Due to CONCURRENT events observed, expect future events to be first resolved
     /*
      * // 10. 3,0,0 -> 4,0,2 :: nodeOne<-nodeThree receive event senderClock =
      * nodeThreeClock.clone(); nodeOneClock.recordEvent(new Event(EventType.RECEIVE, nodeOne,
@@ -193,75 +271,6 @@ public class VectorClockTest {
      * nodeTwoClock.snapshot().get(nodeTwo).currentValue()); assertEquals(5L,
      * nodeTwoClock.snapshot().get(nodeThree).currentValue());
      */
-
-    // TODO: validate EventOccurrence
-
-  }
-
-  @Test
-  public void testVectorClockOrdering() {
-    // Let's model a system of 3 inter-communicating nodes
-    final Node nodeOne = new Node("1");
-    final Node nodeTwo = new Node("2");
-    final Node nodeThree = new Node("3");
-
-    // Setup vector clocks for every node
-    final VectorClock nodeOneClock = new VectorClock();
-    nodeOneClock.initNode(nodeOne);
-    nodeOneClock.initNode(nodeTwo);
-    nodeOneClock.initNode(nodeThree);
-
-    // check that every tstamp in this clock initialized to zero
-    for (final LogicalTstamp logicalTstamp : nodeOneClock.snapshot().values()) {
-      assertEquals(0L, logicalTstamp.currentValue());
-    }
-
-    final VectorClock nodeTwoClock = new VectorClock();
-    nodeTwoClock.initNode(nodeOne);
-    nodeTwoClock.initNode(nodeTwo);
-    nodeTwoClock.initNode(nodeThree);
-
-    // check that every tstamp in this clock initialized to zero
-    for (final LogicalTstamp logicalTstamp : nodeTwoClock.snapshot().values()) {
-      assertEquals(0L, logicalTstamp.currentValue());
-    }
-
-    final VectorClock nodeThreeClock = new VectorClock();
-    nodeThreeClock.initNode(nodeOne);
-    nodeThreeClock.initNode(nodeTwo);
-    nodeThreeClock.initNode(nodeThree);
-
-    // check that every tstamp in this clock initialized to zero
-    for (final LogicalTstamp logicalTstamp : nodeThreeClock.snapshot().values()) {
-      assertEquals(0L, logicalTstamp.currentValue());
-    }
-
-    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
-    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeOneClock, nodeThreeClock));
-    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeTwoClock, nodeThreeClock));
-
-    // 1a. local event on nodeOne: 0,0,0 -> 1,0,0
-    nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
-
-    // 1b. validate ordering
-    assertEquals(EventOrdering.HAPPENS_AFTER,
-        VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
-    assertEquals(EventOrdering.HAPPENS_AFTER,
-        VectorClock.compareClocks(nodeOneClock, nodeThreeClock));
-    assertEquals(EventOrdering.HAPPENS_BEFORE,
-        VectorClock.compareClocks(nodeTwoClock, nodeOneClock));
-    assertEquals(EventOrdering.HAPPENS_BEFORE,
-        VectorClock.compareClocks(nodeThreeClock, nodeOneClock));
-    assertEquals(EventOrdering.IDENTICAL, VectorClock.compareClocks(nodeTwoClock, nodeThreeClock));
-
-    // 2a. concurrent events:: nodeTwo: 0,0,0->0,1,0, nodeThree: 0,0,0->0,0,1
-    nodeTwoClock.recordEvent(new Event(EventType.SEND, nodeTwo, Optional.empty()));
-    nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
-
-    // 2b. validate ordering - at this stage, all clocks show concurrent events
-    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
-    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeOneClock, nodeThreeClock));
-    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeTwoClock, nodeThreeClock));
   }
 
   @Test
