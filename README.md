@@ -1,8 +1,6 @@
 # Vector Clocks
----------------
 
-## Theory
----------
+## Theoretical Foundation
 Vector clocks find uses in distributed systems where wall clocks cannot reliably and more importantly, should not be used to synchronize state across many processes. They are maintained as a vector of logical timestamps on every node/process in the system. 
 
 Given N "nodes" in a "system" denoted by (1..N), for every globally-known, versioned entity in the system, every node maintains a vector of N scalars modeled by the logical timestamps (Lamport clocks) corresponding to its knowledge/view of the state of the system as evidenced by its interaction with the other N-1 nodes in the system via a sequence of "events" as observed by it. These events could be local to the node or remote events generated via its interaction with the other nodes in the system. For the sake of modeling this system, remote events could be generalized to send and receive type events.
@@ -16,150 +14,146 @@ Two events may be causally-related if they obey the happens-before or happens-af
 
 
 ## API
-------
-   1. Create a new Vector Clock
+1. Create a new Vector Clock
 ```java
-    final VectorClock nodeOneClock = new VectorClock();
+final VectorClock nodeOneClock = new VectorClock();
 ```
 
-   2. Initialize a Node with this clock to init its Logical Timestamp
+2. Initialize a Node with this clock to init its Logical Timestamp
 ```java
-    final VectorClock nodeOneClock = new VectorClock();
+final VectorClock nodeOneClock = new VectorClock();
 ```
 
-   3. Generate a local event on this vector clock
+3. Generate a local event on this vector clock
 ```java
-    nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
+nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
 ```
 
-   4. Clone the vector clock to create a deep copy
+4. Clone the vector clock to create a deep copy
 ```java
-    VectorClock clonedClock = nodeOneClock.clone();
+VectorClock clonedClock = nodeOneClock.clone();
 ```
 
-   5. Generate a snapshot of the vector clock
+5. Generate a snapshot of the vector clock
 ```java
-    SortedMap<Node, LogicalTstamp> clockSnapshot = nodeOneClock.snapshot();
+SortedMap<Node, LogicalTstamp> clockSnapshot = nodeOneClock.snapshot();
 ```
 
-   6. Compare 2 Vector Clocks to determine relative event ordering
+6. Compare 2 Vector Clocks to determine relative event ordering
 ```java
-    // EventOrdering could be one of HAPPENS_BEFORE, HAPPENS_AFTER, CONCURRENT, IDENTICAL, NOT_COMPARABLE
-    EventOrdering ordering = VectorClock.compareClocks(nodeOneClock, nodeTwoClock);
+// EventOrdering could be one of HAPPENS_BEFORE, HAPPENS_AFTER, CONCURRENT, IDENTICAL, NOT_COMPARABLE
+EventOrdering ordering = VectorClock.compareClocks(nodeOneClock, nodeTwoClock);
 ```
 
-   7. Remove a node from the vector clock
+7. Remove a node from the vector clock
 ```java
-    nodeOneClock.removeNode(node);
+nodeOneClock.removeNode(node);
 ```
 
 
-## Logical Timestamps
----------------------
+### A note on Logical Timestamps
 Note that logical timestamps can be generated from their long timestamp values but once created, they are immutable. Along the same lines, calling tick() on a logical timestamp does not modify the existing timestamp but generates a new immutable version.
 
 
 ## Usage Example
-----------------
 Let's walk through step-by-step with a test case to see the vector clocks in action. The asserts along the way will help with code clarity and set right expectations.
-    (a) Let's model a system of 3 inter-communicating nodes
+1. Let's model a system of 3 inter-communicating nodes
 ```java
-    final Node nodeOne = new Node("a");
-    final Node nodeTwo = new Node("b");
-    final Node nodeThree = new Node("c");
+final Node nodeOne = new Node("a");
+final Node nodeTwo = new Node("b");
+final Node nodeThree = new Node("c");
 ```
 
-    (b) Setup vector clocks for every node
+2. Setup vector clocks for every node
 ```java
-    final VectorClock nodeOneClock = new VectorClock();
-    nodeOneClock.initNode(nodeOne);
-    nodeOneClock.initNode(nodeTwo);
-    nodeOneClock.initNode(nodeThree);
+final VectorClock nodeOneClock = new VectorClock();
+nodeOneClock.initNode(nodeOne);
+nodeOneClock.initNode(nodeTwo);
+nodeOneClock.initNode(nodeThree);
 ```
 
-    (c) Now check that every tstamp in this clock initialized to zero
+3. Now check that every tstamp in this clock initialized to zero
 ```java
-    for (final LogicalTstamp logicalTstamp : nodeOneClock.snapshot().values()) {
-      assertEquals(0L, logicalTstamp.currentValue());
-    }
+for (final LogicalTstamp logicalTstamp : nodeOneClock.snapshot().values()) {
+  assertEquals(0L, logicalTstamp.currentValue());
+}
 ```
 
-    (d) Similarly, setup 2 vector clocks for the remaining 2 nodes
+4. Similarly, setup 2 vector clocks for the remaining 2 nodes
 ```java
-    final VectorClock nodeTwoClock = new VectorClock();
-    nodeTwoClock.initNode(nodeOne);
-    nodeTwoClock.initNode(nodeTwo);
-    nodeTwoClock.initNode(nodeThree);
+final VectorClock nodeTwoClock = new VectorClock();
+nodeTwoClock.initNode(nodeOne);
+nodeTwoClock.initNode(nodeTwo);
+nodeTwoClock.initNode(nodeThree);
 
-    final VectorClock nodeThreeClock = new VectorClock();
-    nodeThreeClock.initNode(nodeOne);
-    nodeThreeClock.initNode(nodeTwo);
-    nodeThreeClock.initNode(nodeThree);
+final VectorClock nodeThreeClock = new VectorClock();
+nodeThreeClock.initNode(nodeOne);
+nodeThreeClock.initNode(nodeTwo);
+nodeThreeClock.initNode(nodeThree);
 ```
 
-    (e) Let's run a sequence of 6 events & figure sanity and ordering afforded to us by the vector clocks. We will prove that the sequence of numbering below does not correlate with wall or system clock timestamps and will test the actual ordering observed in this system via validating our expectations from the EventOrderResolution
+5. Let's run a sequence of 6 events & figure sanity and ordering afforded to us by the vector clocks. We will prove that the sequence of numbering below does not correlate with wall or system clock timestamps and will test the actual ordering observed in this system via validating our expectations from the EventOrderResolution
 ```java
-    // event-1:: 0,0,0 -> 1,0,0 :: nodeOne local event
-    nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
-    assertEquals(1L, nodeOneClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(0L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(0L, nodeOneClock.snapshot().get(nodeThree).currentValue());
+// event-1:: 0,0,0 -> 1,0,0 :: nodeOne local event
+nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
+assertEquals(1L, nodeOneClock.snapshot().get(nodeOne).currentValue());
+assertEquals(0L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
+assertEquals(0L, nodeOneClock.snapshot().get(nodeThree).currentValue());
 
-    // event-2:: 0,0,0 -> 0,1,0 :: nodeTwo local event
-    nodeTwoClock.recordEvent(new Event(EventType.LOCAL, nodeTwo, Optional.empty()));
-    assertEquals(0L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(1L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(0L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
+// event-2:: 0,0,0 -> 0,1,0 :: nodeTwo local event
+nodeTwoClock.recordEvent(new Event(EventType.LOCAL, nodeTwo, Optional.empty()));
+assertEquals(0L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
+assertEquals(1L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
+assertEquals(0L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
 
-    // event-3:: 0,0,0 -> 0,0,1 :: nodeThree->nodeTwo send event
-    nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
-    assertEquals(0L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(0L, nodeThreeClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(1L, nodeThreeClock.snapshot().get(nodeThree).currentValue());
+// event-3:: 0,0,0 -> 0,0,1 :: nodeThree->nodeTwo send event
+nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
+assertEquals(0L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
+assertEquals(0L, nodeThreeClock.snapshot().get(nodeTwo).currentValue());
+assertEquals(1L, nodeThreeClock.snapshot().get(nodeThree).currentValue());
 
-    // event-4:: nodeTwo<-nodeThree receive event
-    // sender clock :: 0,0,1
-    // receiver clock :: 0,1,0
-    // boom, conflict detected!
-    VectorClock senderClock = nodeThreeClock.clone();
-    VectorClockTransition transition =
-        nodeTwoClock.recordEvent(new Event(EventType.RECEIVE, nodeTwo, Optional.of(senderClock)));
-    assertTrue(transition.isConcurrentEventConflictDetected());
-    logger.info(transition);
-    assertEquals(0L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(1L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(0L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
+// event-4:: nodeTwo<-nodeThree receive event
+// sender clock :: 0,0,1
+// receiver clock :: 0,1,0
+// boom, conflict detected!
+VectorClock senderClock = nodeThreeClock.clone();
+VectorClockTransition transition =
+    nodeTwoClock.recordEvent(new Event(EventType.RECEIVE, nodeTwo, Optional.of(senderClock)));
+assertTrue(transition.isConcurrentEventConflictDetected());
+logger.info(transition);
+assertEquals(0L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
+assertEquals(1L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
+assertEquals(0L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
 ```
 
-    (f) Note that we observed Concurrent events will stall further processing on nodeTwo until conflicts are resolved. nodeOne and nodeThree can continue business as usual.
+6. Note that we observed Concurrent events will stall further processing on nodeTwo until conflicts are resolved. nodeOne and nodeThree can continue business as usual.
 ```java
-    // event-5:: 1,0,0 -> 2,0,0 :: nodeOne->nodeThree send event
-    nodeOneClock.recordEvent(new Event(EventType.SEND, nodeOne, Optional.empty()));
-    assertEquals(2L, nodeOneClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(0L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(0L, nodeOneClock.snapshot().get(nodeThree).currentValue());
+// event-5:: 1,0,0 -> 2,0,0 :: nodeOne->nodeThree send event
+nodeOneClock.recordEvent(new Event(EventType.SEND, nodeOne, Optional.empty()));
+assertEquals(2L, nodeOneClock.snapshot().get(nodeOne).currentValue());
+assertEquals(0L, nodeOneClock.snapshot().get(nodeTwo).currentValue());
+assertEquals(0L, nodeOneClock.snapshot().get(nodeThree).currentValue());
 
-    // event-6:: 0,0,1 -> 0,0,2 :: nodeThree->nodeOne send event
-    nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
-    assertEquals(0L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
-    assertEquals(0L, nodeThreeClock.snapshot().get(nodeTwo).currentValue());
-    assertEquals(2L, nodeThreeClock.snapshot().get(nodeThree).currentValue());
+// event-6:: 0,0,1 -> 0,0,2 :: nodeThree->nodeOne send event
+nodeThreeClock.recordEvent(new Event(EventType.SEND, nodeThree, Optional.empty()));
+assertEquals(0L, nodeThreeClock.snapshot().get(nodeOne).currentValue());
+assertEquals(0L, nodeThreeClock.snapshot().get(nodeTwo).currentValue());
+assertEquals(2L, nodeThreeClock.snapshot().get(nodeThree).currentValue());
 ```
 
-    (g) Compare clocks to validate that we have not yet resolved any conflicts.
+7. Compare clocks to validate that we have not yet resolved any conflicts.
 ```java
-    // 2,0,3 (nodeThree) vs 3,0,0 (nodeOne)
-    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeThreeClock, nodeOneClock));
+// 2,0,3 (nodeThree) vs 3,0,0 (nodeOne)
+assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeThreeClock, nodeOneClock));
 
-    // 2,0,3 (nodeThree) vs 0,1,0 (nodeTwo)
-    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeThreeClock, nodeTwoClock));
+// 2,0,3 (nodeThree) vs 0,1,0 (nodeTwo)
+assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeThreeClock, nodeTwoClock));
 
-    // 3,0,0 (nodeOne) vs 0,1,0 (nodeTwo)
-    assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
+// 3,0,0 (nodeOne) vs 0,1,0 (nodeTwo)
+assertEquals(EventOrdering.CONCURRENT, VectorClock.compareClocks(nodeOneClock, nodeTwoClock));
 ```
 
 
 ## Papers & Additional Reading
--------------------------------
-http://research.microsoft.com/en-us/um/people/lamport/pubs/time-clocks.pdf
+[Time, Clocks and the Ordering of Events in a Distributed System](http://research.microsoft.com/en-us/um/people/lamport/pubs/time-clocks.pdf)
 
