@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,10 +16,16 @@ import org.apache.logging.log4j.Logger;
 /**
  * Models a vector clock as a dynamic array of node:logicalTimestamp for the node.
  * 
+ * The class itself is not completely thread-safe but the most important {@link #recordEvent(Event)}
+ * implementation uses pessimistic locking to ensure correctness.
+ * 
  * @author gaurav
  */
 public final class VectorClock {
   private static final Logger logger = LogManager.getLogger(VectorClock.class.getSimpleName());
+
+  private final ReentrantReadWriteLock superLock = new ReentrantReadWriteLock(true);
+  private final WriteLock writeLock = superLock.writeLock();
 
   // map from nodeId:logicalTstamp for that node
   // the reason to not do this as a simple 2-d static array of ints is to allow for dynamism which
@@ -42,6 +50,7 @@ public final class VectorClock {
     return tstampVector.remove(node) != null ? true : false;
   }
 
+  // Not a perfect snapshot and there isn't a need for one either
   public Map<Node, LogicalTstamp> snapshot() {
     final Map<Node, LogicalTstamp> snapshot = new TreeMap<>(new Comparator<Node>() {
       public int compare(Node nodeOne, Node nodeTwo) {
@@ -134,46 +143,58 @@ public final class VectorClock {
   /**
    * Record a significant event that materially changes the state and/or data of a Node. This
    * results in a change to the VectorClock.
+   * 
+   * We want to serialize recording of this event on the Node and use pessimistic locking for
+   * simplicity and correctness. Since correctness is non-negotiable, instead of reducing the
+   * critical section and other foo-bar, a more worthwhile goal is to speed up this thread's
+   * execution.
    */
   public VectorClockTransition recordEvent(final Event event) {
     VectorClockTransition transition = null;
-    final Node node = event.getImpactedNode();
-    final LogicalTstamp current = tstampVector.get(node);
-    switch (event.getEventType()) {
-      case LOCAL:
-      case SEND:
-        final LogicalTstamp next = current.tick();
-        tstampVector.put(node, next);
-        transition = new VectorClockTransition(event, null, false);
-        break;
-      case RECEIVE:
-        // this is expected to be typically a clone of the original clock
-        final VectorClock receivedClock = event.getSenderClock();
+    if (writeLock.tryLock()) {
+      try {
+        final Node node = event.getImpactedNode();
+        final LogicalTstamp current = tstampVector.get(node);
+        switch (event.getEventType()) {
+          case LOCAL:
+          case SEND:
+            final LogicalTstamp next = current.tick();
+            tstampVector.put(node, next);
+            transition = new VectorClockTransition(event, null, false);
+            break;
+          case RECEIVE:
+            // this is expected to be typically a clone of the original clock
+            final VectorClock receivedClock = event.getSenderClock();
 
-        // clone the current clock
-        // VectorClock currentClock = clone();
+            // clone the current clock
+            // VectorClock currentClock = clone();
 
-        // now check if the event ordering indicates concurrent events
-        final EventOrdering eventOrdering = VectorClock.compareClocks(this, receivedClock);
+            // now check if the event ordering indicates concurrent events
+            final EventOrdering eventOrdering = VectorClock.compareClocks(this, receivedClock);
 
-        if (eventOrdering == EventOrdering.CONCURRENT) {
-          // do not accept events that result in conflicting version updates
-          transition = new VectorClockTransition(event, this, true);
-        } else {
-          // first tick current tstamp
-          final LogicalTstamp nextTstamp = current.tick();
-          tstampVector.put(node, nextTstamp);
+            if (eventOrdering == EventOrdering.CONCURRENT) {
+              // do not accept events that result in conflicting version updates
+              transition = new VectorClockTransition(event, this, true);
+            } else {
+              // first tick current tstamp
+              final LogicalTstamp nextTstamp = current.tick();
+              tstampVector.put(node, nextTstamp);
 
-          // now merge in received vector clock
-          mergeClock(receivedClock);
+              // now merge in received vector clock
+              mergeClock(receivedClock);
 
-          transition = new VectorClockTransition(event, this, false);
+              transition = new VectorClockTransition(event, this, false);
+            }
+            break;
         }
-        break;
+      } finally {
+        writeLock.unlock();
+      }
     }
     return transition;
   }
 
+  // Merge the passed clock into this clock
   private void mergeClock(final VectorClock clock) {
     for (final Map.Entry<Node, LogicalTstamp> entry : clock.tstampVector.entrySet()) {
       final LogicalTstamp thisTstamp = tstampVector.get(entry.getKey());
