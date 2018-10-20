@@ -1,7 +1,11 @@
 package com.github.vectorclock;
 
 /**
- * Logical timestamp representation.
+ * An immutable logical timestamp representation.
+ * 
+ * Note that logical timestamps can be generated from their long timestamp values but once created,
+ * they are immutable. Along the same lines, calling {@link #tick()} does not modify the existing
+ * logical timestamp but generates a new immutable version.
  * 
  * @author gaurav
  */
