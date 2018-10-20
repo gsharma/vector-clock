@@ -36,7 +36,7 @@ VectorClock clonedClock = nodeOneClock.clone();
 
 5. Generate a snapshot of the vector clock
 ```java
-SortedMap<Node, LogicalTstamp> clockSnapshot = nodeOneClock.snapshot();
+Map<Node, LogicalTstamp> clockSnapshot = nodeOneClock.snapshot();
 ```
 
 6. Compare 2 Vector Clocks to determine relative event ordering

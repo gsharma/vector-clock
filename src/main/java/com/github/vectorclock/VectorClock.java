@@ -4,7 +4,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,8 +42,8 @@ public final class VectorClock {
     return tstampVector.remove(node) != null ? true : false;
   }
 
-  public SortedMap<Node, LogicalTstamp> snapshot() {
-    final SortedMap<Node, LogicalTstamp> snapshot = new TreeMap<>(new Comparator<Node>() {
+  public Map<Node, LogicalTstamp> snapshot() {
+    final Map<Node, LogicalTstamp> snapshot = new TreeMap<>(new Comparator<Node>() {
       public int compare(Node nodeOne, Node nodeTwo) {
         return nodeOne.getId().compareTo(nodeTwo.getId());
       }
