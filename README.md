@@ -1,9 +1,9 @@
 # Vector Clocks
 
 ## Theoretical Foundation
-Vector clocks find uses in distributed systems where wall clocks cannot reliably and more importantly, should not be used to synchronize state across many processes. They are maintained as a vector of logical timestamps on every node/process in the system. 
+Vector clocks find uses in distributed systems where wall clocks cannot reliably be and more importantly, should not be trusted to be synchronized across many processes. Vector clocks are maintained as vectors of logical timestamps on every node/process in the system. 
 
-Given N "nodes" in a "system" denoted by (1..N), for every globally-known, versioned entity in the system, every node maintains a vector of N scalars modeled by the logical timestamps (Lamport clocks) corresponding to its knowledge/view of the state of the system as evidenced by its interaction with the other N-1 nodes in the system via a sequence of "events" as observed by it. These events could be local to the node or remote events generated via its interaction with the other nodes in the system. For the sake of modeling this system, remote events could be generalized to send and receive type events.
+Given N "nodes" in a "system" denoted by (1..N), for every globally-known, versioned entity in the system, every node maintains a vector of N scalars modeled by the logical timestamps (Lamport clocks) corresponding to its knowledge/view of the state of the system as evidenced by its interaction with the other N-1 nodes in the system via a sequence of "events" as observed by it. These events could be local to the node or remote events generated via its interaction with the other nodes in the system. For the sake of modeling this system, remote events could be generalized to send and receive type events. Events result in monotonically increasing logical timestamps.
 
 In order to increment a vector clock:
 1. For a local event on or a send event from a node i, it only ticks its ith element locally.
@@ -39,7 +39,7 @@ VectorClock clonedClock = nodeOneClock.clone();
 Map<Node, LogicalTstamp> clockSnapshot = nodeOneClock.snapshot();
 ```
 
-6. Compare 2 Vector Clocks to determine relative event ordering
+6. Compare 2 Vector Clocks to determine relative event ordering. The compared clocks could indicate causality of recorded events or non-causality (events recorded were concurrent or not comparable.
 ```java
 // EventOrdering could be one of HAPPENS_BEFORE, HAPPENS_AFTER, CONCURRENT, IDENTICAL, NOT_COMPARABLE
 EventOrdering ordering = VectorClock.compareClocks(nodeOneClock, nodeTwoClock);
