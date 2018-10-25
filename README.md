@@ -92,7 +92,7 @@ nodeThreeClock.initNode(nodeTwo);
 nodeThreeClock.initNode(nodeThree);
 ```
 
-5. Let's run a sequence of 6 events & figure sanity and ordering afforded to us by the vector clocks. We will prove that the sequence of numbering below does not correlate with wall or system clock timestamps and will test the actual ordering observed in this system via validating our expectations from the EventOrderResolution
+5. Let's run a sequence of 6 events & figure sanity and ordering afforded to us by the vector clocks. We will prove that the sequence of numbering below does not correlate with wall or system clock timestamps and will test the actual ordering observed in this system via validating our expectations from the EventOrdering
 ```java
 // event-1:: 0,0,0 -> 1,0,0 :: nodeOne local event
 nodeOneClock.recordEvent(new Event(EventType.LOCAL, nodeOne, Optional.empty()));
@@ -120,7 +120,7 @@ VectorClock senderClock = nodeThreeClock.clone();
 VectorClockTransition transition =
     nodeTwoClock.recordEvent(new Event(EventType.RECEIVE, nodeTwo, Optional.of(senderClock)));
 assertTrue(transition.isConcurrentEventConflictDetected());
-logger.info(transition);
+// assert that nodeTwoClock rejected the event and is still at 0,1,0
 assertEquals(0L, nodeTwoClock.snapshot().get(nodeOne).currentValue());
 assertEquals(1L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
 assertEquals(0L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
