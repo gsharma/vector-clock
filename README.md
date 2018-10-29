@@ -128,7 +128,7 @@ assertEquals(1L, nodeTwoClock.snapshot().get(nodeTwo).currentValue());
 assertEquals(0L, nodeTwoClock.snapshot().get(nodeThree).currentValue());
 ```
 
-6. Note that we observed Concurrent events will stall further processing on nodeTwo until conflicts are resolved. nodeOne and nodeThree can continue business as usual.
+6. Note that we observed Concurrent events - this will stall further processing on nodeTwo until conflicts are resolved. nodeOne and nodeThree can continue business as usual.
 ```java
 // event-5:: 1,0,0 -> 2,0,0 :: nodeOne->nodeThree send event
 nodeOneClock.recordEvent(new Event(EventType.SEND, nodeOne, Optional.empty()));
