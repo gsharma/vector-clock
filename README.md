@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.org/gsharma/vector-clock.png)](https://travis-ci.org/gsharma/vector-clock)
+
 # Vector Clocks
 
 ## Theoretical Foundation
