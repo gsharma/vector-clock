@@ -1,4 +1,5 @@
-[![Build Status](https://api.travis-ci.org/gsharma/vector-clock.png)](https://travis-ci.org/gsharma/vector-clock)
+[![Build Status](https://img.shields.io/travis/gsharma/vector-clock/master.svg)](https://travis-ci.org/gsharma/vector-clock)
+[![Test Coverage](https://img.shields.io/codecov/c/github/gsharma/vector-clock/master.svg)](https://codecov.io/github/gsharma/vector-clock?branch=master)
 
 # Vector Clocks
 
