@@ -1,5 +1,6 @@
 [![Build Status](https://img.shields.io/travis/gsharma/vector-clock/master.svg)](https://travis-ci.org/gsharma/vector-clock)
 [![Test Coverage](https://img.shields.io/codecov/c/github/gsharma/vector-clock/master.svg)](https://codecov.io/github/gsharma/vector-clock?branch=master)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=com.github.vectorclock:vector-clock&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.github.vectorclock:vector-clock)
 [![Licence](https://img.shields.io/hexpm/l/plug.svg)](https://github.com/gsharma/vector-clock/blob/master/LICENSE)
 
 # Vector Clocks
