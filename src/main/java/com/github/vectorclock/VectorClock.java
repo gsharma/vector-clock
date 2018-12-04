@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author gaurav
  */
-public final class VectorClock {
+public final class VectorClock implements IVectorClock {
   private static final Logger logger = LogManager.getLogger(VectorClock.class.getSimpleName());
 
   private final ReentrantReadWriteLock superLock = new ReentrantReadWriteLock(true);
@@ -32,6 +32,12 @@ public final class VectorClock {
   // is inherent in a system as nodes are allowed to come and go at will
   private final ConcurrentMap<Node, LogicalTstamp> tstampVector = new ConcurrentHashMap<>();
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.github.vectorclock.IVectorClock#initNode(com.github.vectorclock.Node)
+   */
+  @Override
   public void initNode(final Node node) {
     if (node == null) {
       throw new IllegalArgumentException("node cannot be null");
@@ -39,18 +45,23 @@ public final class VectorClock {
     tstampVector.putIfAbsent(node, new LogicalTstamp());
   }
 
-  public void initNodeTstampTuple(final Node node, final LogicalTstamp tstamp) {
-    if (node == null || tstamp == null) {
-      throw new IllegalArgumentException("node and logical timestamp cannot be null");
-    }
-    tstampVector.putIfAbsent(node, tstamp);
-  }
-
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.github.vectorclock.IVectorClock#removeNode(com.github.vectorclock.Node)
+   */
+  @Override
   public boolean removeNode(final Node node) {
     return tstampVector.remove(node) != null ? true : false;
   }
 
   // Not a perfect snapshot and there isn't a need for one either
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.github.vectorclock.IVectorClock#snapshot()
+   */
+  @Override
   public Map<Node, LogicalTstamp> snapshot() {
     final Map<Node, LogicalTstamp> snapshot = new TreeMap<>(new Comparator<Node>() {
       public int compare(Node nodeOne, Node nodeTwo) {
@@ -65,13 +76,20 @@ public final class VectorClock {
   }
 
   @Override
-  public VectorClock clone() {
+  public VectorClock deepCopy() {
     final Map<Node, LogicalTstamp> snapshot = snapshot();
     final VectorClock cloned = new VectorClock();
     for (final Map.Entry<Node, LogicalTstamp> entry : snapshot.entrySet()) {
       cloned.initNodeTstampTuple(entry.getKey(), entry.getValue());
     }
     return cloned;
+  }
+
+  private void initNodeTstampTuple(final Node node, final LogicalTstamp tstamp) {
+    if (node == null || tstamp == null) {
+      throw new IllegalArgumentException("node and logical timestamp cannot be null");
+    }
+    tstampVector.putIfAbsent(node, tstamp);
   }
 
   /**
@@ -83,8 +101,8 @@ public final class VectorClock {
    * 4. CONCURRENT if some tstamps of clockOne and clockTwo are reverse ordered<br/>
    * 5. NOT_COMPARABLE otherwise
    */
-  public static EventOrdering compareClocks(final VectorClock clockOne,
-      final VectorClock clockTwo) {
+  public static EventOrdering compareClocks(final IVectorClock clockOne,
+      final IVectorClock clockTwo) {
     EventOrdering ordering = null;
     if (clockOne == null || clockTwo == null) {
       throw new IllegalArgumentException("Cannot compare null vector clocks");
@@ -140,15 +158,12 @@ public final class VectorClock {
     return ordering;
   }
 
-  /**
-   * Record a significant event that materially changes the state and/or data of a Node. This
-   * results in a change to the VectorClock.
+  /*
+   * (non-Javadoc)
    * 
-   * We want to serialize recording of this event on the Node and use pessimistic locking for
-   * simplicity and correctness. Since correctness is non-negotiable, instead of reducing the
-   * critical section and other foo-bar, a more worthwhile goal is to speed up this thread's
-   * execution.
+   * @see com.github.vectorclock.IVectorClock#recordEvent(com.github.vectorclock.Event)
    */
+  @Override
   public VectorClockTransition recordEvent(final Event event) {
     VectorClockTransition transition = null;
     if (writeLock.tryLock()) {
@@ -207,6 +222,11 @@ public final class VectorClock {
     }
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.github.vectorclock.IVectorClock#toString()
+   */
   @Override
   public String toString() {
     return "VectorClock:[" + snapshot().toString() + "]";

@@ -8,10 +8,10 @@ package com.github.vectorclock;
  */
 public final class VectorClockTransition {
   private final Event nodeEvent;
-  private final VectorClock receiverVectorClock;
+  private final IVectorClock receiverVectorClock;
   private final boolean concurrentEventConflictDetected;
 
-  public VectorClockTransition(final Event nodeEvent, final VectorClock receiverVectorClock,
+  public VectorClockTransition(final Event nodeEvent, final IVectorClock receiverVectorClock,
       final boolean concurrentEventConflictDetected) {
     this.nodeEvent = nodeEvent;
     this.receiverVectorClock = receiverVectorClock;
@@ -22,7 +22,7 @@ public final class VectorClockTransition {
     return nodeEvent;
   }
 
-  public VectorClock getReceiverVectorClock() {
+  public IVectorClock getReceiverVectorClock() {
     return receiverVectorClock;
   }
 

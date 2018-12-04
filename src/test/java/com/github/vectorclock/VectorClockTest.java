@@ -51,7 +51,7 @@ public class VectorClockTest {
     final Node nodeThree = new Node("3");
 
     // Setup vector clocks for every node
-    final VectorClock nodeOneClock = new VectorClock();
+    final IVectorClock nodeOneClock = new VectorClock();
     nodeOneClock.initNode(nodeOne);
     nodeOneClock.initNode(nodeTwo);
     nodeOneClock.initNode(nodeThree);
@@ -61,7 +61,7 @@ public class VectorClockTest {
       assertEquals(0L, logicalTstamp.currentValue());
     }
 
-    final VectorClock nodeTwoClock = new VectorClock();
+    final IVectorClock nodeTwoClock = new VectorClock();
     nodeTwoClock.initNode(nodeOne);
     nodeTwoClock.initNode(nodeTwo);
     nodeTwoClock.initNode(nodeThree);
@@ -71,7 +71,7 @@ public class VectorClockTest {
       assertEquals(0L, logicalTstamp.currentValue());
     }
 
-    final VectorClock nodeThreeClock = new VectorClock();
+    final IVectorClock nodeThreeClock = new VectorClock();
     nodeThreeClock.initNode(nodeOne);
     nodeThreeClock.initNode(nodeTwo);
     nodeThreeClock.initNode(nodeThree);
@@ -117,7 +117,7 @@ public class VectorClockTest {
     final Node nodeThree = new Node("c");
 
     // Setup vector clocks for every node
-    final VectorClock nodeOneClock = new VectorClock();
+    final IVectorClock nodeOneClock = new VectorClock();
     nodeOneClock.initNode(nodeOne);
     nodeOneClock.initNode(nodeTwo);
     nodeOneClock.initNode(nodeThree);
@@ -127,7 +127,7 @@ public class VectorClockTest {
       assertEquals(0L, logicalTstamp.currentValue());
     }
 
-    final VectorClock nodeTwoClock = new VectorClock();
+    final IVectorClock nodeTwoClock = new VectorClock();
     nodeTwoClock.initNode(nodeOne);
     nodeTwoClock.initNode(nodeTwo);
     nodeTwoClock.initNode(nodeThree);
@@ -137,7 +137,7 @@ public class VectorClockTest {
       assertEquals(0L, logicalTstamp.currentValue());
     }
 
-    final VectorClock nodeThreeClock = new VectorClock();
+    final IVectorClock nodeThreeClock = new VectorClock();
     nodeThreeClock.initNode(nodeOne);
     nodeThreeClock.initNode(nodeTwo);
     nodeThreeClock.initNode(nodeThree);
@@ -174,7 +174,7 @@ public class VectorClockTest {
     // sender clock :: 0,0,1
     // receiver clock :: 0,1,0
     // boom, conflict detected!
-    VectorClock senderClock = nodeThreeClock.clone();
+    VectorClock senderClock = nodeThreeClock.deepCopy();
     VectorClockTransition transition =
         nodeTwoClock.recordEvent(new Event(EventType.RECEIVE, nodeTwo, Optional.of(senderClock)));
     assertTrue(transition.isConcurrentEventConflictDetected());
