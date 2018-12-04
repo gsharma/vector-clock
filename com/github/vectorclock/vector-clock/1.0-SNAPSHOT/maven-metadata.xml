@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>com.github.vectorclock</groupId>
+  <artifactId>vector-clock</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <versioning>
+    <snapshot>
+      <timestamp>20181204.020947</timestamp>
+      <buildNumber>1</buildNumber>
+    </snapshot>
+    <lastUpdated>20181204020947</lastUpdated>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>1.0-20181204.020947-1</value>
+        <updated>20181204020947</updated>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>1.0-20181204.020947-1</value>
+        <updated>20181204020947</updated>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
