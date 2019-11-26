@@ -2,6 +2,9 @@ language: java
 
 dist: trusty
 
+os:
+  - linux
+
 addons:
   sonarcloud:
     organization: "gsharma-github"
@@ -12,7 +15,7 @@ script:
   - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar
 
 jdk:
-  - oraclejdk9
+  - openjdk12
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t 7d6ab3c8-67d1-4566-b314-8781da899e76
