@@ -22,7 +22,7 @@
     <github.repo.name>vector-clock</github.repo.name>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>4.13.1</junit.version>
-    <log4j.version>2.11.1</log4j.version>
+    <log4j.version>2.14.0</log4j.version>
     <javac.target>12</javac.target>
     <os-maven-plugin.version>1.6.2</os-maven-plugin.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
